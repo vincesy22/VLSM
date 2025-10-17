@@ -1,8 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import urllib.request
-import json
 import threading
+from network import get_ip_info
 
 class IPInfoApp:
     def __init__(self, root):
@@ -29,11 +28,11 @@ class IPInfoApp:
 
         main_frame = ttk.Frame(self.root, padding="25", style="TFrame")
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         title_label = ttk.Label(main_frame, text="🌎 VLS-EM Public IP Finder", style="Header.TLabel", anchor="center")
         title_label.grid(row=0, column=0, columnspan=2, pady=(0, 5), sticky="ew")
 
-        group_label = ttk.Label(main_frame, text="Get your current IPV4 and IPV6 addresses in an instant!", style="Subheader.TLabel", anchor="center")
+        group_label = ttk.Label(main_frame, text="Get your current IPV4/IPV6 address in an instant!", style="Subheader.TLabel", anchor="center")
         group_label.grid(row=1, column=0, columnspan=2, pady=(0, 20), sticky="ew")
 
         ttk.Separator(main_frame, orient='horizontal').grid(row=2, column=0, columnspan=2, sticky="ew", pady=(0, 15))
@@ -47,9 +46,7 @@ class IPInfoApp:
         for i, field in enumerate(fields):
             label = ttk.Label(main_frame, text=f"{field}:", style="Field.TLabel")
             label.grid(row=i + 3, column=0, sticky="w", padx=5, pady=4)
-
             self.info_vars[field] = tk.StringVar(value="N/A")
-            
             value_label = ttk.Label(main_frame, textvariable=self.info_vars[field], style="Value.TLabel")
             value_label.grid(row=i + 3, column=1, sticky="w", padx=5, pady=4)
 
@@ -57,14 +54,14 @@ class IPInfoApp:
 
         fetch_button = ttk.Button(main_frame, text="🚀 Get My IP Info", command=self.start_fetch_thread, style="TButton")
         fetch_button.grid(row=len(fields) + 4, column=0, columnspan=2, pady=(0, 10), sticky="ew")
-        
+
         self.progress_bar = ttk.Progressbar(main_frame, orient="horizontal", mode="indeterminate")
         self.progress_bar.grid(row=len(fields) + 5, column=0, columnspan=2, pady=(5, 5), sticky="ew")
         self.progress_bar.grid_remove()
 
         self.status_var = tk.StringVar(value="Ready. Click the button to fetch data.")
         status_label = ttk.Label(main_frame, textvariable=self.status_var, style="Status.TLabel")
-        status_label.grid(row=len(fields) + 6, column=0, columnspan=2, pady=(5,0), sticky="ew")
+        status_label.grid(row=len(fields) + 6, column=0, columnspan=2, pady=(5, 0), sticky="ew")
 
         powered_by_label = ttk.Label(main_frame, text="Data provided by ipapi.co", font=("Segoe UI", 7, "italic"), background="#e0f2f7", foreground="#999999")
         powered_by_label.grid(row=len(fields) + 7, column=0, columnspan=2, pady=(10, 0), sticky="se")
@@ -72,14 +69,7 @@ class IPInfoApp:
         main_frame.grid_columnconfigure(0, weight=1)
         main_frame.grid_columnconfigure(1, weight=3)
 
-    def get_ip_info(self):
-        try:
-            with urllib.request.urlopen("https://ipapi.co/json/", timeout=10) as response:
-                return json.loads(response.read().decode())
-        except Exception as e:
-            raise ConnectionError(f"Failed to retrieve data: {e}")
-
-    def update_ui(self, data):
+    def update_ui_with_data(self, data):
         self.info_vars["IPv4 Address"].set(data.get('ip', 'N/A'))
         self.info_vars["Version"].set(data.get('version', 'N/A'))
         self.info_vars["City"].set(data.get('city', 'N/A'))
@@ -97,19 +87,21 @@ class IPInfoApp:
     def fetch_and_display_info(self):
         self.progress_bar.grid()
         self.progress_bar.start()
-        try:
-            self.status_var.set("Fetching data from API...")
-            data = self.get_ip_info()
-            self.root.after(0, lambda: self.update_ui(data))
-        except ConnectionError as e:
-            self.root.after(0, lambda: messagebox.showerror("Connection Error", str(e)))
-            self.root.after(0, lambda: self.status_var.set("Error! Could not fetch data."))
-        except Exception as e:
-            self.root.after(0, lambda: messagebox.showerror("Error", f"An unexpected error occurred: {e}"))
-            self.root.after(0, lambda: self.status_var.set("An unexpected error occurred."))
-        finally:
-            self.root.after(0, lambda: self.progress_bar.stop())
-            self.root.after(0, lambda: self.progress_bar.grid_remove())
+        self.status_var.set("Fetching data from API...")
+
+        data = get_ip_info()
+
+        self.progress_bar.stop()
+        self.progress_bar.grid_remove()
+
+        if data and "error" in data:
+            messagebox.showerror("Connection Error", data["error"])
+            self.status_var.set("Error! Could not fetch data.")
+        elif data:
+            self.update_ui_with_data(data)
+        else:
+            messagebox.showerror("Error", "Failed to retrieve data. No response from network.")
+            self.status_var.set("Error! No data received.")
 
     def start_fetch_thread(self):
         thread = threading.Thread(target=self.fetch_and_display_info, daemon=True)
@@ -119,3 +111,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = IPInfoApp(root)
     root.mainloop()
+
