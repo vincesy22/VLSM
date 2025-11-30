@@ -1,5 +1,5 @@
 import os
-from map_generator import generate_map
+from VLSM.map_generator import generate_map
 
 def test_map_creation():
     output = generate_map(14.5995, 120.9842, "test_map.html")
