@@ -1,6 +1,9 @@
 import re
 from unittest.mock import patch
-from VLSM.network import get_ip_info
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+from network import get_ip_info
 
 def test_ipv6_format():
     mock_ipv6 = "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
