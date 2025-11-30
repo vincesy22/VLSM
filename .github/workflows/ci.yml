@@ -26,4 +26,4 @@ jobs:
       - name: Run tests
         env: 
           PYTHONPATH: ${{ github.workspace }}
-        run: PYTHONPATH=$PYTHONPATH:$(pwd) python -m pytes
+        run: PYTHONPATH=$PYTHONPATH:$(pwd) python -m pytest
