@@ -1,9 +1,6 @@
 import re
 from unittest.mock import patch
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-
-from network import get_ip_info
+from VLSM.network import get_ip_info
 
 
 def test_ipv4_format():
