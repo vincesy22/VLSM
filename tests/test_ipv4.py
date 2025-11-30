@@ -1,6 +1,6 @@
 import re
 from unittest.mock import patch
-from network import get_ip_info
+from VLSM.network import get_ip_info
 
 def test_ipv4_format():
     mock_response = {
